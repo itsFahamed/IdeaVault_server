@@ -18,6 +18,21 @@ app.use(
   })
 )
 
+// Ensure database is connected before processing requests
+app.use(async (req, res, next) => {
+  try {
+    await connectDb()
+    next()
+  } catch (err) {
+    console.error('Database connection middleware error:', err)
+    res.status(500).json({ error: 'Database connection failed', details: err.message })
+  }
+})
+
+app.get('/', (req, res) => {
+  res.json({ message: 'IdeaVault API Server is running' })
+})
+
 app.get('/api/status', async (req, res) => {
   try {
     await connectDb()
@@ -32,13 +47,17 @@ app.use('/api/my-ideas', myIdeasRouter)
 app.use('/api/comments', commentsRouter)
 app.use('/api/my-interactions', myInteractionsRouter)
 
-connectDb()
-  .then(() => {
-    app.listen(port, () => {
-      console.log(`IdeaVault_server listening on port ${port}`)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  connectDb()
+    .then(() => {
+      app.listen(port, () => {
+        console.log(`IdeaVault_server listening on port ${port}`)
+      })
     })
-  })
-  .catch((err) => {
-    console.error('Failed to connect to MongoDB', err)
-    process.exit(1)
-  })
+    .catch((err) => {
+      console.error('Failed to connect to MongoDB', err)
+      process.exit(1)
+    })
+}
+
+module.exports = app
