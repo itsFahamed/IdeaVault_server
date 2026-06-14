@@ -11,9 +11,20 @@ const app = express()
 const port = process.env.PORT || 5000
 
 app.use(express.json())
+const allowedOrigins = [
+  'http://localhost:3000',
+  process.env.CLIENT_URL
+].filter(Boolean)
+
 app.use(
   cors({
-    origin: 'http://localhost:3000',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
     credentials: true,
   })
 )
